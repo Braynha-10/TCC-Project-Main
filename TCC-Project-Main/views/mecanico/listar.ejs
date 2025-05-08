@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listar mecanicos</title>
+    <!-- Link para o CSS do Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- CSS Específico -->    
+    <link rel="stylesheet" href="/public/listagens.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <h1>Lista de Mecanicos</h1>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Telefone</th>
+                    <th>Especialidade</th>
+                    <th>Salário</th>
+                    <th>Comissão</th>
+                    <th>Editar</th>
+                    <th>Deletar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% mecanicos.forEach(mecanico => { %>
+                    <tr>
+                        <td><%= mecanico.nome %></td>
+                        <td><%= mecanico.email %></td>
+                        <td><%= mecanico.telefone %></td>
+                        <td><%= mecanico.especialidade %></td>
+                        <td><%= mecanico.salario %></td>
+                        <td><%= mecanico.comissao %></td>
+                        <td><a href="/gerente/mecanico/editar/<%=mecanico.id%>" class="btn btn-warning">Editar</a></td>
+                        <td><button class="btn btn-danger" onclick="openModal(<%= mecanico.id %>)">Deletar</button></td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+        <br><br>
+        <div class="d-flex justify-content-center">
+            <a href="/gerente/painelGerente" class="btn btn-danger">Voltar</a>
+        </div>
+</body>
+
+<!-- Modal Deletar-->
+<div id="deleteModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); justify-content: center; align-items: center;">
+    <div style="background: #fff; padding: 20px; border-radius: 8px; width: 300px; text-align: center;">
+        <h3>Confirmar Exclusão</h3>
+        <p>Tem certeza que deseja excluir este mecânico?</p>
+        <form id="deleteForm" method="POST" style="margin-top: 20px;">
+            <input type="hidden" name="_method" value="DELETE">
+            <button type="submit" style="margin-right: 10px;">Sim</button>
+            <button type="button" onclick="closeModal()">Cancelar</button>
+        </form>
+    </div>
+</div>
+
+
+
+
+</html>
+
+<script>
+    const redirectHomeGerente = () =>{
+        window.location.href = "/gerente?token=" + localStorage.getItem("token");
+    }
+
+    const openModal = (mecanicoId) => {
+        const deleteModal = document.getElementById('deleteModal');
+        const deleteForm = document.getElementById('deleteForm');
+        
+        
+        deleteForm.action = `/gerente/mecanicos/${mecanicoId}?_method=DELETE`;
+        
+        
+        deleteModal.style.display = 'flex';
+    };
+
+    const closeModal = () => {
+        const deleteModal = document.getElementById('deleteModal');
+        deleteModal.style.display = 'none';
+    };
+
+
+</script>

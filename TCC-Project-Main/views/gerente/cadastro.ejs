@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro Gerentes</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <!-- CSS Específico -->
+    <link rel="stylesheet" href="/public/forms.css">
+</head>
+
+<body>
+    <div class="d-flex justify-content-center align-items-center vh-100">
+        <div class="container col-11 col-sm-8 col-md-6 col-lg-4">
+            <h1 class="text-center mb-4"><%= gerente ? 'Editar Gerente' : 'Cadastrar Gerente' %></h1>
+            <form action="<%= gerente ? `/gerente/gerentes/${gerente.id}?_method=PATCH` : '/gerente/gerentes/cadastro' %>" method="POST">
+                <!-- Hidden Input para Method Override -->
+                <input type="hidden" name="_method" value="<%= gerente ? 'PATCH' : 'POST' %>">
+
+                <!-- Nome -->
+                <div class="mb-3">
+                    <label for="nome" class="form-label">Nome:</label>
+                    <input type="text" name="nome" id="nome" class="form-control" 
+                           value="<%= gerente ? gerente.nome : "" %>" required>
+                </div>
+
+                <!-- Telefone -->
+                <div class="mb-3">
+                    <label for="telefone" class="form-label">Telefone:</label>
+                    <input type="text" name="telefone" id="telefone" class="form-control" 
+                           value="<%= gerente ? gerente.telefone : "" %>" required>
+                </div>
+
+                <!-- Salário -->
+                <div class="mb-3">
+                    <label for="salario" class="form-label">Salário:</label>
+                    <input type="number" name="salario" id="salario" class="form-control" 
+                           value="<%= gerente ? gerente.salario : "" %>" required>
+                </div>
+
+                <!-- Email -->
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email:</label>
+                    <input type="email" name="email" id="email" class="form-control" 
+                           value="<%= gerente ? gerente.email : "" %>" required>
+                </div>
+
+                <!-- Senha -->
+                <div class="mb-3">
+                    <label for="senha" class="form-label">Senha:</label>
+                    <input type="password" name="senha" id="senha" class="form-control" 
+                           value="<%= gerente ? gerente.senha : "" %>" required>
+                </div>
+
+                <!-- Botão de Envio -->
+                <div class="text-center">
+                    <button type="submit" class="botao w-100">
+                        <%= gerente ? 'Salvar Alterações' : 'Cadastrar' %>
+                    </button>
+                </div>
+                <br><br>
+                <div class="d-flex justify-content-end">
+                    <a href="/gerente/painelGerente" class="btn btn-danger">Voltar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

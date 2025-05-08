@@ -1,0 +1,112 @@
+/* loginMecanico.css */
+
+/* Estilo geral do corpo da página */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f4f4f9;
+}
+
+/* Container principal */
+form {
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+/* Títulos */
+h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #333;
+    text-align: center;
+}
+
+/* Labels */
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 14px;
+    color: #555;
+    text-align: left;
+}
+
+/* Inputs */
+input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    background-color: #f9f9f9;
+}
+
+/* Inputs em foco */
+input:focus {
+    border-color: #007BFF;
+    outline: none;
+    background-color: #fff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.botao {
+    display: inline-block; /* Permite ajustar padding e dimensões */
+    color: #000000; /* Cor do texto */
+    padding: 10px 20px; /* Espaçamento interno do botão */
+    font-size: 16px; /* Tamanho da fonte */
+    color: #000000; /* Cor do texto */
+    background-color: #677288; /* Cor do fundo (azul) */
+    text-decoration: none; /* Remove o sublinhado do link */
+    border: none; /* Remove borda padrão */
+    border-radius: 5px; /* Bordas arredondadas */
+    box-shadow: 0px 4px 6px rgba(221, 162, 162, 0.1); /* Adiciona sombra */
+    transition: background-color 0.3s, box-shadow 0.3s; /* Transição suave */
+  }
+  
+  .botao:hover {
+    background-color: #b1b8af; /* Fundo mais escuro ao passar o mouse */
+    color: #000000; /* Cor do texto */
+    box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2); /* Aumenta a sombra */
+    text-decoration: none; /* Remove sublinhado */
+  }
+  
+  .botao:active {
+    background-color: #f1f1f1; /* Fundo ainda mais escuro ao clicar */
+    color: #000000; /* Cor do texto */
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); /* Sombra reduzida */
+    text-decoration: none; /* Remove sublinhado */
+  }
+
+/* Mensagem de erro */
+.error {
+    color: red;
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    form {
+        padding: 15px;
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+
+    button {
+        font-size: 14px;
+    }
+}
