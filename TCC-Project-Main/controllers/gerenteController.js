@@ -1,5 +1,6 @@
-const { Mecanico, Peca, Servico, Veiculo, Pagamento, Catalogo, Gerente, Cliente, Solicitacoes_peca, Solicitacoes_servico, sequelize } = require('../models');
+const { Mecanico, Peca, Servico, Veiculo, Pagamento, Catalogo, Gerente, Cliente, Solicitacoes_peca, Solicitacoes_servico, Estoque, sequelize } = require('../models');
 const { get } = require('../routes/gerenteRoutes');
+const { Op } = require('sequelize');
 const PDFDocument = require('pdfkit');
 
 
@@ -299,14 +300,50 @@ const processarSolicitacaoPeca = async (req, res) => {
     }
     if(status === "Aprovar"){
         try {
+            //TODO: ver se existe a peca antes (updateOrCreate)
+            const peca = await Peca.findOne({
+                where: {
+                    nome: {
+                    [Op.like]: `%${solicitacao.nome}%`  // PostgreSQL: case-insensitive LIKE
+                    }
+                }
+            });
+            if(peca){
+                const pecaEstoque = await Estoque.findOne({
+                    where: {
+                        produtoId: peca.id
+                    }
+                });
+                if(!pecaEstoque){
+                    const novaPecaEstoque = await Estoque.create({
+                        produtoId: peca.id,
+                        capacidade: 5,
+                        quantidade: 5,
+                    }, { transaction })
+                } else {
+                    if(pecaEstoque.quantidade >= pecaEstoque.capacidade) {
+                        return res.status(404).send('Capacidade maxima preenchida!');
+                    }
+                    await pecaEstoque.abastecerEstoque();
+                }
+            } else {
+                const novaPeca = await Peca.create(
+                    {
+                    nome: solicitacao.nome,
+                    descricao: solicitacao.descricao,
+                    preco: solicitacao.preco
+                    },
+                    { transaction }
+                //TODO: adicionar a peca ao estoque ao criar
+                );
 
-            const novaPeca = await Peca.create({
-                nome: solicitacao.nome,
-                descricao: solicitacao.descricao,
-                preco: solicitacao.preco
-            },
-            { transaction }
-        );
+                const novaPecaEstoque = await Estoque.create({
+                    produtoId: novaPeca.id,
+                    capacidade: 5,
+                    quantidade: 5,
+                }, { transaction })
+
+            }
 
         solicitacao.status = 'aprovado';
         await solicitacao.save({transaction});
@@ -382,6 +419,20 @@ const processarSolicitacaoServicos = async (req, res) => {
                 descricao: solicitacaoServico.descricao,
                 status: 'Pendente',
             })
+            if(solicitacaoServico.id_peca){
+                const peca = await Estoque.findOne({
+                    where: {
+                        produtoId: solicitacaoServico.id_peca 
+                    }, transaction
+                });
+
+                if(!peca){
+                    return res.status(404).send('Peca nao encontrada!');
+                }
+                
+                await peca.reduzirQuantidade();
+                
+            }
 
             solicitacaoServico.status = 'APROVADO';
             await solicitacaoServico.save({transaction});
