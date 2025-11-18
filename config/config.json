@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "root",
+    "password": "bdssc16$",
+    "database": "bdd_mecanica",
+    "host": "localhost",
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "root",
+    "password": "bdssc16$",
+    "database": "database_test",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "root",
+    "password": "bdssc16$",
+    "database": "database_production",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  }
+}

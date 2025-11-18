@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Solicitação do cadastro de Pecas</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../public/forms.css">
+    <style>
+      .hidden{display:none;}
+      .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #28a745;
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 6px;
+        z-index: 9999;
+      }
+      .toast.err { background: #c82333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <h1 class="col-lg-12 align-items-center">Solicitação de Peças</h1>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <p>Antes de solicitar, verifique o catálogo. Use os botões para escolher ação:</p>
+                <div class="btn-group mb-3" role="group">
+                    <button id="btnExistente" class="botao4">Solicitar peça existente</button>
+                    <button id="btnNova" class="botao4" style="margin-left: 20px;">Cadastrar nova peça</button>
+                </div>
+
+                <!-- Lista de peças (form existente) -->
+                <form id="formExistente" class="">
+                    <label for="catalogo">Catálogo de Peças:</label>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Selecionar</th>
+                                <th>Id</th>
+                                <th>Nome</th>
+                                <th>Preço</th>
+                                <th>Estoque</th>
+                                <th>Qtd solic.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% pecas.forEach(peca => { %>
+                                <tr>
+                                    <td>
+                                      <input type="radio" name="pecaId" value="<%= peca.id %>" />
+                                    </td>
+                                    <td><%= peca.id %></td>
+                                    <td><%= peca.nome %></td>
+                                    <td>R$ <%= (peca.preco || 0).toFixed(2) %></td>
+                                    <td><%= peca.quantidade || 0 %></td>
+                                    <td>
+                                      <input class="form-control quantidade-input" type="number" name="quantidade" min="1" value="1" style="width:100px"/>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+
+                    <div class="d-flex justify-content-between">
+                      <div>
+                        <button type="button" id="submitExistente" class="btn btn-success">Enviar solicitação (existente)</button>
+                      </div>
+                      <div>
+                        <a href="/mecanico/painelMecanico" class="btn btn-danger">Voltar</a>
+                      </div>
+                    </div>
+                </form>
+
+                <!-- Form para nova peça (oculto inicialmente) -->
+                <form id="formNova" class="hidden mt-3">
+                    <h5>Solicitar nova peça (será criado cadastro após aprovação do gerente)</h5>
+                    <div class="form-group">
+                      <label for="nome">Nome:</label>
+                      <input class="form-control" type="text" name="nome" id="nome" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="descricao">Descrição:</label>
+                      <input class="form-control" type="text" name="descricao" id="descricao">
+                    </div>
+                    <div class="form-group">
+                      <label for="preco">Preço (opcional):</label>
+                      <input class="form-control" type="number" name="preco" id="preco" step="0.01">
+                    </div>
+                    <div class="form-group">
+                      <label for="quantidadeNova">Quantidade solicitada:</label>
+                      <input class="form-control" type="number" name="quantidade" id="quantidadeNova" min="1" value="1" required>
+                    </div>
+
+                    <button type="button" id="submitNova" class="btn btn-success">Enviar solicitação (nova)</button>
+                    <button type="button" id="cancelNova" class="btn btn-secondary">Cancelar</button>
+                </form>
+
+                <div id="toastContainer"></div>
+            </div>
+        </div>
+    </div>
+
+<script>
+  const btnExistente = document.getElementById('btnExistente');
+  const btnNova = document.getElementById('btnNova');
+  const formExistente = document.getElementById('formExistente');
+  const formNova = document.getElementById('formNova');
+  const submitExistente = document.getElementById('submitExistente');
+  const submitNova = document.getElementById('submitNova');
+  const cancelNova = document.getElementById('cancelNova');
+  const toastContainer = document.getElementById('toastContainer');
+
+  btnExistente.addEventListener('click', () => {
+    formExistente.classList.remove('hidden');
+    formNova.classList.add('hidden');
+  });
+  btnNova.addEventListener('click', () => {
+    formNova.classList.remove('hidden');
+    formExistente.classList.add('hidden');
+  });
+  cancelNova.addEventListener('click', () => {
+    formNova.classList.add('hidden');
+    formExistente.classList.remove('hidden');
+  });
+
+  function showToast(msg, ok = true) {
+    const d = document.createElement('div');
+    d.className = 'toast' + (ok ? '' : ' err');
+    d.textContent = msg;
+    toastContainer.appendChild(d);
+    setTimeout(() => d.remove(), 3500);
+  }
+
+  async function postJson(url, body) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    return res.json();
+  }
+
+  submitExistente.addEventListener('click', async () => {
+    const form = formExistente;
+    const radio = form.querySelector('input[name="pecaId"]:checked');
+    if (!radio) { showToast('Selecione uma peça.', false); return; }
+    const pecaId = radio.value;
+    const quantidadeInput = form.querySelector('input[name="quantidade"]');
+    const quantidade = parseInt(quantidadeInput.value, 10) || 1;
+
+    const payload = { tipo: 'existente', pecaId, quantidade };
+    try {
+      const resp = await postJson('/mecanico/pecas/solicitar', payload);
+      showToast(resp.message || (resp.ok ? 'Solicitação enviada' : 'Erro'), resp.ok);
+      if (resp.ok) {
+        // opcional: reset seleção
+        radio.checked = false;
+        quantidadeInput.value = 1;
+      }
+    } catch (err) {
+      showToast('Erro ao enviar', false);
+    }
+  });
+
+  submitNova.addEventListener('click', async () => {
+    const form = formNova;
+    const nome = form.querySelector('#nome').value.trim();
+    if (!nome) { showToast('Informe o nome da peça', false); return; }
+    const descricao = form.querySelector('#descricao').value.trim();
+    const preco = form.querySelector('#preco').value;
+    const quantidade = parseInt(form.querySelector('#quantidadeNova').value, 10) || 1;
+
+    const payload = { tipo: 'nova', nome, descricao, preco: preco || null, quantidade };
+    try {
+      const resp = await postJson('/mecanico/pecas/solicitar', payload);
+      showToast(resp.message || (resp.ok ? 'Solicitação enviada' : 'Erro'), resp.ok);
+      if (resp.ok) {
+        form.reset();
+        formNova.classList.add('hidden');
+        formExistente.classList.remove('hidden');
+      }
+    } catch (err) {
+      showToast('Erro ao enviar', false);
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Pecas Gerente</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <!-- CSS Específico -->
+    <link rel="stylesheet" href="/public/forms.css">
+</head>
+<body>
+    <div class="d-flex justify-content-center align-items-center vh-100">
+        <div class="container col-11 col-sm-8 col-md-6 col-lg-4">
+            <h1 class="text-center mb-4"><%= peca!=null ? 'Editar Peça' : 'Cadastrar Peça' %></h1>
+            <form action="<%= peca ? `/gerente/pecas/modifica/${peca.id}?_method=PATCH` : '/gerente/pecas/cadastro' %>" method="POST">
+                <!-- Hidden Input para Method Override -->
+                <input type="hidden" name="_method" value="<%= peca ? 'PATCH' : 'POST' %>">
+
+                <!-- Nome -->
+                <div class="mb-3">
+                    <label for="nome" class="form-label">Nome:</label>
+                    <input type="text" name="nome" id="nome" class="form-control"
+                           value="<%= peca ? peca.nome : "" %>" required>
+                </div>
+
+                <!-- Descrição -->
+                <div class="mb-3">
+                    <label for="descricao" class="form-label">Descrição:</label>
+                    <input type="text" name="descricao" id="descricao" class="form-control"
+                           value="<%= peca ? peca.descricao : "" %>" required>
+                </div>
+
+                <!-- Preço -->
+                <div class="mb-3">
+                    <label for="preco" class="form-label">Preço:</label>
+                    <input type="number" name="preco" id="preco" class="form-control"
+                           value="<%= peca ? peca.preco : "" %>" required>
+                </div>
+
+                <!-- Botão de Envio -->
+                <div class="text-center">
+                    <button type="submit" class="botao w-100">
+                        <%= peca ? 'Salvar Alterações' : 'Cadastrar' %>
+                    </button>
+                </div>
+                <br><br>
+                <div class="d-flex justify-content-end">
+                    <a href="/gerente/painelGerente" class="btn btn-danger">Voltar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
