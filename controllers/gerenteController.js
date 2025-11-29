@@ -1,21 +1,52 @@
 const { Mecanico, Peca, Servico, Veiculo, Pagamento, Catalogo, Gerente, Cliente, Solicitacoes_peca, Solicitacoes_servico, Estoque, sequelize } = require('../models');
 const { get } = require('../routes/gerenteRoutes');
-const { Op } = require('sequelize');
+const { Op, Sequelize } = require("sequelize");
 const PDFDocument = require('pdfkit');
 
 
 
 
 //Metodos Mecanico
-const listarMecanicos = async(req,res) => {
-    try{
-        const mecanicos = await Mecanico.findAll();
-        res.render('mecanico/listar', {mecanicos});
-    } catch (error){
-        console.error('Erro ao listar mecanicos: ', error);
-        res.status(500).json({error: 'Erro ao listar mecanicos'});
+const listarMecanicos = async (req, res) => {
+    try {
+        let { page = 1, search = "" } = req.query;
+        page = Number(page);
+
+        const limit = 10;
+        const offset = (page - 1) * limit;
+
+        const where = {};
+
+        if (search.trim() !== "") {
+            where[Op.or] = [
+                { nome: { [Op.like]: `%${search}%` } },
+                { email: { [Op.like]: `%${search}%` } },
+                { telefone: { [Op.like]: `%${search}%` } },
+                { especialidade: { [Op.like]: `%${search}%` } },
+            ];
+        }
+
+        const { rows: mecanicos, count } = await Mecanico.findAndCountAll({
+            where,
+            limit,
+            offset
+        });
+
+        const totalPages = Math.ceil(count / limit);
+
+        res.render("mecanico/listar", {
+            mecanicos,
+            currentPage: page,
+            totalPages,
+            search
+        });
+
+    } catch (error) {
+        console.error("Erro ao listar mecanicos: ", error);
+        res.status(500).json({ error: "Erro ao listar mecanicos" });
     }
-}
+};
+
 
 const getEditarMecanico = async(req, res) => {
     const {id} = req.params;
@@ -79,14 +110,45 @@ const cadastrarPeca = async(req, res) => {
 };
 
 const listarPeca = async (req, res) => {
-    try{
-        const pecas = await Peca.findAll();
-        res.render('pecas/listar', {pecas});
-    } catch(error){
-        console.error('Erro ao listar as pecas: ', error);
-        res.status(500).json({error: "Erro ao listar Pecas"})
+    try {
+        let { page = 1, search = "" } = req.query;
+        page = Number(page);
+
+        const limit = 10;
+        const offset = (page - 1) * limit;
+
+        const where = {};
+
+        if (search.trim() !== "") {
+            where[Op.or] = [
+                { nome: { [Op.like]: `%${search}%` } },
+                { descricao: { [Op.like]: `%${search}%` } },
+                { preco: { [Op.like]: `%${search}%` } }
+            ];
+        }
+
+        const { rows: pecas, count } = await Peca.findAndCountAll({
+            where,
+            limit,
+            offset
+        });
+
+        const totalPages = Math.ceil(count / limit);
+
+        res.render("pecas/listar", {
+            pecas,
+            gerente: true,
+            search,
+            currentPage: page,
+            totalPages
+        });
+
+    } catch (error) {
+        console.error("Erro ao listar as pecas: ", error);
+        res.status(500).json({ error: "Erro ao listar Pecas" });
     }
-}
+};
+
 
 const getModificaPeca = async(req, res) => {
     const {id} = req.params;
@@ -156,17 +218,20 @@ const listarServico = async(req,res) => {
     }
 }
 
-//pdf da ordem de servico
-const ordemServico = async (req, res) => {
 
+const ordemServico = async (req, res) => {
     try {
         const { id } = req.params;
+        const tipo = req.query.tipo || "completo";  // completo | simples | financeiro
 
-        // Buscar informações do serviço pelo ID
+        // Busca o serviço e todas as relações necessárias
         const servico = await Servico.findOne({
             where: { id },
             include: [
-                { model: Veiculo, include: Cliente },
+                {
+                    model: Veiculo,
+                    include: Cliente
+                },
                 { model: Catalogo },
                 { model: Peca },
                 { model: Pagamento },
@@ -178,37 +243,276 @@ const ordemServico = async (req, res) => {
             return res.status(404).send("Serviço não encontrado.");
         }
 
-        // Criar o documento PDF
+        const PDFDocument = require("pdfkit");
         const doc = new PDFDocument();
 
-        // Configura o cabeçalho de resposta para abrir o PDF no navegador
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `inline; filename=servico_${id}.pdf`);
+        // Cabeçalhos HTTP
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `inline; filename=servico_${id}_${tipo}.pdf`);
 
-        // Envia o PDF diretamente para a resposta
         doc.pipe(res);
 
-        // Adiciona conteúdo ao PDF
-        doc.fontSize(16).text(`Detalhes do Serviço - ID: ${id}`, { align: 'center' });
+        // =========================================
+        // CABEÇALHO
+        // =========================================
+        doc.fontSize(20).text("Ordem de Serviço", { align: "center" });
+        doc.fontSize(14).text(`Relatório: ${tipo.toUpperCase()}`, { align: "center" });
+        doc.moveDown(2);
+
+        // =========================================
+        // DADOS BÁSICOS
+        // =========================================
+        doc.fontSize(16).text("Informações do Serviço", { underline: true });
         doc.moveDown();
-        doc.text(`Mecânico: ${servico.Mecanico.nome}`);
-        doc.text(`Veículo: ${servico.Veiculo.modelo}`);
-        doc.text(`Cliente: ${servico.Veiculo.Cliente.nome}`);
-        doc.text(`Peça: ${servico.Peca ? servico.Peca.nome : "Não utilizado"}`);
-        doc.text(`Serviço: ${servico.Catalogo.nome}`);
+
+        doc.fontSize(12).text(`ID do Serviço: ${servico.id}`);
         doc.text(`Descrição: ${servico.descricao}`);
         doc.text(`Status: ${servico.status}`);
         doc.moveDown();
-        doc.text("Pagamento:");
-        doc.text(`Tipo: ${servico.Pagamento.tipo === 0 ? 'Credito' : servico.Pagamento.tipo === 1 ? 'Débito' : 'Dinheiro/Pix'}`);
-        doc.text(`Valor: R$ ${servico.Pagamento.valor.toFixed(2)}`);
-        doc.end(); // Finaliza o documento PDF
+
+        // =========================================
+        // VEÍCULO E CLIENTE
+        // =========================================
+        if (tipo === "completo" || tipo === "simples") {
+            doc.fontSize(16).text("Dados do Veículo e Cliente", { underline: true });
+            doc.moveDown();
+
+            doc.fontSize(12).text(`Veículo: ${servico.Veiculo.modelo} (${servico.Veiculo.marca})`);
+            doc.text(`Ano: ${servico.Veiculo.ano}`);
+            doc.text(`Cliente: ${servico.Veiculo.Cliente.nome}`);
+            doc.text(`Telefone Cliente: ${servico.Veiculo.Cliente.telefone}`);
+            doc.moveDown();
+        }
+
+        // =========================================
+        // MECÂNICO
+        // =========================================
+        if (tipo === "completo" || tipo === "simples") {
+            doc.fontSize(16).text("Informações do Mecânico", { underline: true });
+            doc.moveDown();
+
+            doc.fontSize(12).text(`Mecânico Responsável: ${servico.Mecanico.nome}`);
+            doc.moveDown();
+        }
+
+        // =========================================
+        // CATÁLOGO / SERVIÇO REALIZADO
+        // =========================================
+        if (tipo === "completo") {
+            doc.fontSize(16).text("Informações do Serviço Realizado", { underline: true });
+            doc.moveDown();
+
+            doc.fontSize(12).text(`Serviço: ${servico.Catalogo.nome}`);
+            doc.text(`Peça Utilizada: ${servico.Peca ? servico.Peca.nome : "Nenhuma peça registrada"}`);
+            doc.moveDown();
+        }
+
+        // =========================================
+        // FINANCEIRO
+        // =========================================
+        if (tipo === "completo" || tipo === "financeiro") {
+            doc.fontSize(16).text("Informações de Pagamento", { underline: true });
+            doc.moveDown();
+
+            if (servico.Pagamento) {
+                const tipoPg =
+                    servico.Pagamento.tipo === 0 ? "Crédito" :
+                    servico.Pagamento.tipo === 1 ? "Débito" :
+                    "Dinheiro/Pix";
+
+                doc.fontSize(12).text(`Tipo de Pagamento: ${tipoPg}`);
+                doc.text(`Valor: R$ ${servico.Pagamento.valor.toFixed(2)}`);
+            } else {
+                doc.text("Nenhuma informação de pagamento registrada.");
+            }
+
+            doc.moveDown();
+        }
+
+        // Finaliza o PDF
+        doc.end();
+
     } catch (error) {
         console.error("Erro ao gerar PDF:", error);
         res.status(500).send("Erro ao gerar PDF.");
     }
 };
 
+const fechamentoGeral = async (req, res) => {
+    try {
+        const tipo = req.query.tipo || "completo";  
+        const filtroMecanico = req.query.mecanico || null;
+        const filtroData = req.query.data || null;
+        const filtroMes = req.query.mes || null;
+
+        const PDFDocument = require("pdfkit");
+        const doc = new PDFDocument({ margin: 40 });
+
+        // Cabeçalhos HTTP
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `inline; filename=fechamento_${tipo}.pdf`);
+
+        doc.pipe(res);
+
+        // ===============================
+        // FILTRAGEM GLOBAL
+        // ===============================
+
+        let whereClause = {};
+
+        if (filtroMecanico) whereClause.id_mecanico = filtroMecanico;
+
+        if (filtroData) whereClause.createdAt = filtroData;
+
+        if (filtroMes) {
+            whereClause.createdAt = {
+                [Op.between]: [
+                    `${filtroMes}-01`,
+                    `${filtroMes}-31`
+                ]
+            };
+        }
+
+        // ===============================
+        // BUSCAR TODOS SERVIÇOS
+        // ===============================
+        const servicos = await Servico.findAll({
+            where: whereClause,
+            include: [
+                { model: Veiculo, include: Cliente },
+                { model: Catalogo },
+                { model: Peca },
+                { model: Pagamento },
+                { model: Mecanico },
+            ],
+            order: [["id", "ASC"]]
+        });
+
+        // ===============================
+        // HEADER DO PDF
+        // ===============================
+        doc.fontSize(22).text("Fechamento Geral - Oficina", { align: "center" });
+        doc.fontSize(14).text(`Relatório: ${tipo.toUpperCase()}`, { align: "center" });
+        doc.moveDown();
+
+        doc.fontSize(12).text(`Serviços encontrados: ${servicos.length}`);
+        if (filtroMecanico) doc.text(`Filtrado por mecânico: ${filtroMecanico}`);
+        if (filtroData) doc.text(`Filtrado pela data: ${filtroData}`);
+        if (filtroMes) doc.text(`Filtrado pelo mês: ${filtroMes}`);
+        doc.moveDown(2);
+
+        // =================================
+        // 1) RELATÓRIO COMPLETO
+        // =================================
+        if (tipo === "completo") {
+            servicos.forEach(s => {
+                doc.fontSize(14).text(`Serviço ID ${s.id}`, { underline: true });
+                doc.moveDown(0.5);
+
+                doc.fontSize(12).text(`Mecânico: ${s.Mecanico.nome}`);
+                doc.text(`Cliente: ${s.Veiculo.Cliente.nome}`);
+                doc.text(`Veículo: ${s.Veiculo.modelo}`);
+                doc.text(`Serviço: ${s.Catalogo.nome}`);
+                doc.text(`Peça: ${s.Peca ? s.Peca.nome : "Nenhuma"}`);
+                doc.text(`Descrição: ${s.descricao}`);
+                doc.text(`Status: ${s.status}`);
+
+                if (s.Pagamento)
+                    doc.text(`Pagamento: R$ ${s.Pagamento.valor.toFixed(2)}`);
+
+                doc.moveDown(1.5);
+            });
+        }
+
+        // =================================
+        // 2) RELATÓRIO SIMPLES
+        // =================================
+        if (tipo === "simples") {
+            servicos.forEach(s => {
+                doc.text(
+                    `#${s.id} - ${s.Catalogo.nome} | Mecânico: ${s.Mecanico.nome} | Cliente: ${s.Veiculo.Cliente.nome}`
+                );
+                doc.moveDown(0.5);
+            });
+        }
+
+        // =================================
+        // 3) FINANCEIRO
+        // =================================
+        if (tipo === "financeiro") {
+            let total = 0;
+
+            servicos.forEach(s => {
+                if (s.Pagamento) {
+                    total += s.Pagamento.valor;
+                    doc.text(
+                        `Serviço ${s.id} | Valor: R$ ${s.Pagamento.valor.toFixed(2)}`
+                    );
+                } else {
+                    doc.text(`Serviço ${s.id} | Sem pagamento registrado`);
+                }
+                doc.moveDown(0.5);
+            });
+
+            doc.moveDown();
+            doc.fontSize(16).text(`TOTAL GERAL: R$ ${total.toFixed(2)}`, {
+                underline: true
+            });
+        }
+
+        // =================================
+        // 4) AGRUPADO POR MECÂNICO
+        // =================================
+        if (tipo === "por-mecanico") {
+            const grupos = {};
+
+            servicos.forEach(s => {
+                const nome = s.Mecanico.nome;
+                if (!grupos[nome]) grupos[nome] = [];
+                grupos[nome].push(s);
+            });
+
+            for (const mecanico in grupos) {
+                doc.fontSize(16).text(`Mecânico: ${mecanico}`, { underline: true });
+                doc.moveDown(0.5);
+
+                grupos[mecanico].forEach(s => {
+                    doc.fontSize(12).text(
+                        `Serviço ${s.id} | ${s.Catalogo.nome} | Cliente: ${s.Veiculo.Cliente.nome}`
+                    );
+                });
+
+                doc.moveDown(1.5);
+            }
+        }
+
+        // =================================
+        // 5) RESUMO GERAL
+        // =================================
+        if (tipo === "resumo-geral") {
+            let totalServicos = servicos.length;
+            let totalPecas = servicos.filter(s => s.Peca).length;
+            let totalFinanceiro = servicos
+                .filter(s => s.Pagamento)
+                .reduce((soma, s) => soma + s.Pagamento.valor, 0);
+
+            doc.fontSize(16).text("Resumo Geral da Oficina", { underline: true });
+            doc.moveDown();
+
+            doc.fontSize(12).text(`Total de serviços: ${totalServicos}`);
+            doc.text(`Serviços com peças: ${totalPecas}`);
+            doc.text(`Total arrecadado: R$ ${totalFinanceiro.toFixed(2)}`);
+
+            doc.moveDown(2);
+        }
+
+        doc.end();
+
+    } catch (error) {
+        console.error("Erro ao gerar fechamento geral:", error);
+        res.status(500).send("Erro ao gerar relatório.");
+    }
+};
 
 
 //Methods Gerente
@@ -364,92 +668,194 @@ const processarSolicitacaoPeca = async (req, res) => {
     }
 };
 
-
-const listarSolicitacoesServicos = async (req, res) =>{
+const listarSolicitacoesServicos = async (req, res) => {
     try {
-        const servicos = await Solicitacoes_servico.findAll({
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const offset = (page - 1) * limit;
+
+        const search = req.query.search || "";
+
+        let where = {};
+
+        if (search) {
+            where = {
+                [Op.or]: [
+                    // tabela principal
+                    { descricao: { [Op.like]: `%${search}%` } },
+                    { status: { [Op.like]: `%${search}%` } },
+
+                    // tipo de pagamento convertido para texto
+                    Sequelize.where(
+                        Sequelize.literal(`
+                            CASE 
+                                WHEN tipo_pagamento = 0 THEN 'credito'
+                                WHEN tipo_pagamento = 1 THEN 'debito'
+                                WHEN tipo_pagamento = 2 THEN 'pix'
+                                ELSE ''
+                            END
+                        `),
+                        { [Op.like]: `%${search.toLowerCase()}%` }
+                    ),
+
+                    // associações
+                    { "$Mecanico.nome$": { [Op.like]: `%${search}%` } },
+                    { "$Veiculo.modelo$": { [Op.like]: `%${search}%` } },
+                    { "$Veiculo.Cliente.nome$": { [Op.like]: `%${search}%` } },
+                    { "$Peca.nome$": { [Op.like]: `%${search}%` } },
+                    { "$Catalogo.nome$": { [Op.like]: `%${search}%` } },
+                ],
+            };
+        }
+
+        const { count, rows } = await Solicitacoes_servico.findAndCountAll({
+            where,
+            limit,
+            offset,
             include: [
                 { model: Veiculo, include: Cliente },
-                {model: Catalogo},
-                {model: Peca},
-                {model: Mecanico},
-            ]
+                { model: Catalogo },
+                { model: Peca },
+                { model: Mecanico },
+            ],
         });
-        const gerente = true
-        res.render('servico/listaServicos', { Servico: servicos, gerente });
+
+        res.render("servico/listaServicos", {
+            Servico: rows,
+            search,
+            gerente: true,
+            page,
+            totalPages: Math.ceil(count / limit)
+        });
+
     } catch (error) {
-        console.error('Erro ao listar as solicitações de serviço: ', error);
-        res.status(500).send("Erro ao listar as solicitações de serviço");
+        console.error("Erro ao listar solicitações:", error);
+        res.status(500).send("Erro ao listar solicitações");
     }
-}
+};
+
 
 const processarSolicitacaoServicos = async (req, res) => {
-    const {idServico, status} = req.body;
+  // aceita tanto solicitacaoId (frontend atual) quanto idServico (nome antigo)
+  const idServico = req.body.idServico || req.body.solicitacaoId || req.body.id || req.params.id;
+  let { status } = req.body;
 
-    const transaction = await sequelize.transaction();
-    const solicitacaoServico = await Solicitacoes_servico.findByPk(idServico, {
-        include: [
-            {model: Veiculo, include: Cliente},
-            {model: Catalogo},
-            {model: Peca},
-            {model: Mecanico},
-        ]
-    });
-    if(!solicitacaoServico){
-        return res.status(404).send('Solicitacao de Servico nao encontrada!');
-    }
-    if(status === "APROVADO"){
-        try {
-            const novoPagamento = await Pagamento.create({
-                /*tipoPagamento, valor, desconto, id_cliente, status(boolean)*/
-                tipo: solicitacaoServico.tipo_pagamento,
-                valor: parseFloat(solicitacaoServico.Peca.preco) + parseFloat(solicitacaoServico.Catalogo.preco),
-                desconto: solicitacaoServico.desconto,
-                id_cliente: solicitacaoServico.Veiculo.id_cliente,
-                status: false,
-            }, {transaction})
-
-            const novoServico = await Servico.create({
-                id_mecanico: solicitacaoServico.id_mecanico,
-                id_veiculo: solicitacaoServico.id_veiculo,
-                id_catalogo: solicitacaoServico.id_catalogo,
-                id_peca:solicitacaoServico.id_peca || null,
-                id_pagamento: novoPagamento.id,
-                descricao: solicitacaoServico.descricao,
-                status: 'Pendente',
-            })
-            if(solicitacaoServico.id_peca){
-                const peca = await Estoque.findOne({
-                    where: {
-                        produtoId: solicitacaoServico.id_peca 
-                    }, transaction
-                });
-
-                if(!peca){
-                    return res.status(404).send('Peca nao encontrada!');
-                }
-                
-                await peca.reduzirQuantidade();
-                
-            }
-
-            solicitacaoServico.status = 'APROVADO';
-            await solicitacaoServico.save({transaction});
-            await transaction.commit();
-            
-            res.redirect("/gerente/servicos/solicitacoes");
-
-        } catch (error) {
-            await transaction.rollback();
-                return res.status(500).json({error: error.message})
-        } 
+  if (!idServico) {
+    // Se for requisicao AJAX, retorne JSON; caso contrário mantenha comportamento antigo
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+      return res.status(400).json({ ok: false, message: 'id da solicitação ausente' });
     } else {
-        solicitacaoServico.status = 'RECUSADO';
-        await solicitacaoServico.save({transaction});
-        await transaction.commit();
-        res.redirect("/gerente/servicos/solicitacoes");
+      return res.status(400).send('id da solicitação ausente');
     }
-}
+  }
+
+  // Normaliza o status (case-insensitive)
+  status = (status || '').toString().trim().toUpperCase();
+
+  // Busca a solicitacao com includes (para usar dados depois)
+  const transaction = await sequelize.transaction();
+  try {
+    const solicitacaoServico = await Solicitacoes_servico.findByPk(idServico, {
+      include: [
+        { model: Veiculo, include: Cliente },
+        { model: Catalogo },
+        { model: Peca },
+        { model: Mecanico },
+      ],
+      transaction
+    });
+
+    if (!solicitacaoServico) {
+      await transaction.rollback();
+      if (req.xhr || req.headers.accept?.includes('application/json')) {
+        return res.status(404).json({ ok: false, message: 'Solicitação de Serviço não encontrada' });
+      }
+      return res.status(404).send('Solicitação de Serviço não encontrada');
+    }
+
+    if (status === 'APROVADO' || status === 'APROVA' || status === 'APROVAR') {
+      // cria pagamento e servico dentro da transaction
+      const valorPeca = solicitacaoServico.Peca ? parseFloat(solicitacaoServico.Peca.preco || 0) : 0;
+      const valorServico = solicitacaoServico.Catalogo ? parseFloat(solicitacaoServico.Catalogo.preco || 0) : 0;
+      const total = valorPeca + valorServico;
+
+      const novoPagamento = await Pagamento.create({
+        tipo: solicitacaoServico.tipo_pagamento,
+        valor: total,
+        desconto: solicitacaoServico.desconto || 0,
+        id_cliente: solicitacaoServico.Veiculo ? solicitacaoServico.Veiculo.id_cliente : null,
+        status: false,
+      }, { transaction });
+
+      const novoServico = await Servico.create({
+        id_mecanico: solicitacaoServico.id_mecanico,
+        id_veiculo: solicitacaoServico.id_veiculo,
+        id_catalogo: solicitacaoServico.id_catalogo,
+        id_peca: solicitacaoServico.id_peca || null,
+        id_pagamento: novoPagamento.id,
+        descricao: solicitacaoServico.descricao,
+        status: 'Pendente',
+      }, { transaction });
+
+      // Se havia peça vinculada, reduz do estoque (usando transaction)
+      if (solicitacaoServico.id_peca) {
+        const pecaEstoque = await Estoque.findOne({
+          where: { produtoId: solicitacaoServico.id_peca },
+          transaction
+        });
+
+        if (!pecaEstoque) {
+          await transaction.rollback();
+          if (req.xhr || req.headers.accept?.includes('application/json')) {
+            return res.status(404).json({ ok: false, message: 'Peça não encontrada no estoque' });
+          }
+          return res.status(404).send('Peça não encontrada no estoque');
+        }
+
+        // assumo que existe método reduzirQuantidade que aceita transaction
+        if (typeof pecaEstoque.reduzirQuantidade === 'function') {
+          await pecaEstoque.reduzirQuantidade({ transaction });
+        } else {
+          // fallback simples: decrementar quantidade e salvar
+          pecaEstoque.quantidade = (pecaEstoque.quantidade || 0) - 1;
+          if (pecaEstoque.quantidade < 0) pecaEstoque.quantidade = 0;
+          await pecaEstoque.save({ transaction });
+        }
+      }
+
+      solicitacaoServico.status = 'APROVADO';
+      await solicitacaoServico.save({ transaction });
+
+      await transaction.commit();
+
+      if (req.xhr || req.headers.accept?.includes('application/json')) {
+        return res.json({ ok: true, message: 'Solicitação aprovada', novoServicoId: novoServico.id });
+      } else {
+        return res.redirect('/gerente/servicos/solicitacoes');
+      }
+    } else {
+      // qualquer outro status => recusar
+      solicitacaoServico.status = 'RECUSADO';
+      await solicitacaoServico.save({ transaction });
+      await transaction.commit();
+
+      if (req.xhr || req.headers.accept?.includes('application/json')) {
+        return res.json({ ok: true, message: 'Solicitação recusada' });
+      } else {
+        return res.redirect('/gerente/servicos/solicitacoes');
+      }
+    }
+  } catch (error) {
+    console.error('processarSolicitacaoServicos error:', error);
+    try { await transaction.rollback(); } catch (e) { /* ignore */ }
+
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+      return res.status(500).json({ ok: false, message: error.message || 'Erro interno' });
+    }
+    return res.status(500).send('Erro interno: ' + (error.message || ''));
+  }
+};
+
 
 exports.alterarSolicitacaoPeca = async (req, res) => {
   try {
@@ -495,4 +901,5 @@ module.exports = {
     listarSolicitacoesServicos,
     processarSolicitacaoServicos,
     ordemServico,
+    fechamentoGeral,
 };

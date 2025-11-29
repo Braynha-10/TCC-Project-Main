@@ -1,5 +1,5 @@
 const { Sequelize, Veiculo, Cliente, Pagamento, Servico, Mecanico, Catalogo, Peca, Solicitacoes_servico, Solicitacoes_peca, Estoque } = require('../models'); // Importação dos modelos de dados
-
+const { Op } = require('sequelize');
 // Veiculos --------------------------------------------------------------------------------------------------------------------------------------
 
 exports.homeVeiculo = async(req, res) => {
@@ -7,33 +7,65 @@ exports.homeVeiculo = async(req, res) => {
     res.render('veiculo/cadastroVeiculo', { clientes });
 };
 
-exports.listandoVeiculos = async(req, res, id) => {
-    // Veiculo.findAll().then(veiculo => {
-    //     res.render('veiculo/listaVeiculos', {Veiculo: veiculo});
-    // });
-    
+exports.listandoVeiculos = async (req, res, id) => {
     try {
-        const veiculo = await Veiculo.findAll({
-            include: {
-                model: Cliente,
-                include: {
-                    model: Veiculo,
-                    include: {
-                        model: Servico,
-                        where: { id_mecanico: id },  // Use o ID do mecânico logado
-                        required: true,
-                    },
-                    required: true            
-                    },
-                required: true
-                },
-        });
-        res.render('veiculo/listaVeiculos', { Veiculo: veiculo });
-    } catch (error) {
-        console.error('Erro ao listar os veiculos: ', error);
-        res.status(500).send("Erro ao listar os Veiculos");
-    }
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10; 
+        const offset = (page - 1) * limit;
 
+        const search = req.query.search || "";
+        console.log("Search query:", search);
+        const whereVeiculo = search
+            ? {
+                  [Op.or]: [
+                      { modelo: { [Op.like]: `%${search}%` } },
+                      { marca: { [Op.like]: `%${search}%` } },
+                      { ano: { [Op.like]: `%${search}%` } },
+                  ]
+              }
+            : {};
+
+        console.log("Where clause for Veiculo:", whereVeiculo);
+        const { rows: veiculos, count: total } = await Veiculo.findAndCountAll({
+            where: whereVeiculo,
+            include: [
+                {
+                    model: Cliente,
+                    required: true,
+                    include: [
+                        {
+                            model: Veiculo,
+                            required: true,
+                            include: [
+                                {
+                                    model: Servico,
+                                    where: { id_mecanico: id },
+                                    required: true
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            limit,
+            offset,
+            distinct: true,  // necessário para count correto com include
+            order: [["modelo", "ASC"]],
+        });
+
+        const totalPages = Math.ceil(total / limit);
+
+        res.render("veiculo/listaVeiculos", {
+            Veiculo: veiculos,
+            currentPage: page,
+            totalPages,
+            search,
+        });
+
+    } catch (error) {
+        console.error("Erro ao listar os veiculos: ", error);
+        res.status(500).send("Erro ao listar os Veículos");
+    }
 };
 
 exports.cadastroVeiculo = async(req, res) => {
@@ -115,25 +147,54 @@ exports.deletaVeiculo = async(req, res) => {
 };
 
 // Clientes --------------------------------------------------------------------------------------------------------------------------------------
-exports.listarClientesMecanico = async(req, res, id) => {
+exports.listarClientesMecanico = async (req, res, id) => {
     try {
-        const clientes = await Cliente.findAll({
-            include:{
+
+        // 📌 1. Parâmetros de paginação
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;  
+        const offset = (page - 1) * limit;
+
+        // 📌 2. Parâmetro de busca
+        const search = req.query.search || "";
+
+        // 📌 3. Condições do where (aplica busca se existir)
+        const whereCliente = search
+            ? { nome: { [Op.like]: `%${search}%` } }
+            : {};
+
+        // 📌 4. Consulta com paginação REAL (findAndCountAll)
+        const { rows: clientes, count } = await Cliente.findAndCountAll({
+            where: whereCliente,
+            limit,
+            offset,
+            include: {
                 model: Veiculo,
+                required: true,
                 include: {
                     model: Servico,
-                    where: { id_mecanico: id },  // Use o ID do mecânico logado
-                    required: true,
-                },
-                required: true   
+                    where: { id_mecanico: id },
+                    required: true
+                }
             }
         });
-        res.render('cliente/listaClientes', { Cliente: clientes });
+
+        const totalPages = Math.ceil(count / limit);
+
+        // 📌 5. Renderiza mantendo tudo que sua view espera
+        res.render("cliente/listaClientes", {
+            Cliente: clientes,
+            currentPage: page,
+            totalPages,
+            search
+        });
+
     } catch (error) {
-        console.error('Erro ao listar os clientes: ', error);
+        console.error("Erro ao listar os clientes:", error);
         res.status(500).send("Erro ao listar os Clientes");
     }
-}
+};
+
 
 exports.cadastroCliente = async(req, res) => {
     const { nome, telefone, email, endereco } = req.body;
@@ -324,20 +385,44 @@ exports.solicitarServico = async(req, res) => {
 }
 
 //pecas----------------------------------------------------------------------------------------------------------------------------------------
-exports.listarSolitacoesPecas = async(req, res) => {
+exports.listarSolitacoesPecas = async (req, res) => {
     try {
-        const pecas = await Solicitacoes_peca.findAll({
-            include: [
-                { model: Mecanico },
-            ]
+        let { page = 1, search = "" } = req.query;
+        page = Number(page);
+        const limit = 10;
+        const offset = (page - 1) * limit;
+
+        // Filtro de busca
+        const where = {};
+        if (search.trim() !== "") {
+            where.nome = { [Op.like]: `%${search}%` };
+        }
+
+        // Consulta com paginação
+        const { rows: pecas, count } = await Solicitacoes_peca.findAndCountAll({
+            where,
+            limit,
+            offset,
+            include: [{ model: Mecanico }]
         });
-        const gerente = false;
-        res.render('peca/listaPeca', { pecas, gerente, mecanico: req.session.mecanico });
+
+        const totalPages = Math.ceil(count / limit);
+
+        res.render("peca/listaPeca", {
+            pecas,
+            gerente: req.session.gerente || false,
+            mecanico: req.session.mecanico || false,
+            currentPage: page,
+            totalPages,
+            search
+        });
+
     } catch (error) {
-        console.error('Erro ao listar as solicitações de peças: ', error);
-        res.status(500).send('Erro ao listar as solicitações de peças');
+        console.error("Erro ao listar as solicitações de peças:", error);
+        res.status(500).send("Erro ao listar as solicitações de peças");
     }
-}
+};
+
 
 exports.solicitarPeca = async(req, res) => {
     const { nome, descricao, preco } = req.body;

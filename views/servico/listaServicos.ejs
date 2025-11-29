@@ -11,6 +11,16 @@
 <body>
     <div class="container col-12 col-sm-11 col-md-8">
         <h1 class="text-center">Lista de Solicitações / Serviços</h1>
+    <form method="GET" class="d-flex mb-3">
+        <input
+            type="text"
+            name="search"
+            class="form-control"
+            placeholder="Buscar por descrição, status, cliente..."
+            value="<%= search %>"
+        >
+        <button class="btn btn-primary ms-2">Buscar</button>
+    </form>
 
         <div class="table-responsive">
             <table class="table table-striped table-hover">
@@ -70,6 +80,31 @@
                 </tbody>
             </table>
         </div>
+        <div class="d-flex justify-content-center mt-4">
+            <nav>
+                <ul class="pagination">
+
+                    <% if (page > 1) { %>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=<%= page - 1 %>&search=<%= search %>">Anterior</a>
+                        </li>
+                    <% } %>
+
+                    <% for (let p = 1; p <= totalPages; p++) { %>
+                        <li class="page-item <%= p === page ? 'active' : '' %>">
+                            <a class="page-link" href="?page=<%= p %>&search=<%= search %>"><%= p %></a>
+                        </li>
+                    <% } %>
+
+                    <% if (page < totalPages) { %>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=<%= page + 1 %>&search=<%= search %>">Próximo</a>
+                        </li>
+                    <% } %>
+
+                </ul>
+            </nav>
+        </div>
 
         <br><br>
         <div class="d-flex justify-content-center">
@@ -117,35 +152,56 @@
             confirmBox.appendChild(wrapper);
 
             async function send(status) {
-              try {
-                const res = await fetch('/gerente/servicos/solicitacoes', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ solicitacaoId: id, status })
-                });
-                const json = await res.json();
-                confirmBox.innerHTML = '';
-                const span = document.createElement('span');
-                if (res.ok && json.ok) {
-                  span.className = 'badge bg-success';
-                  span.textContent = json.message || 'Status alterado';
-                  const statusCell = row.querySelector('td:nth-child(7)');
-                  if (statusCell) statusCell.innerHTML = `<span class="badge bg-success">${status}</span>`;
-                } else {
-                  span.className = 'badge bg-danger';
-                  span.textContent = json.message || 'Erro';
-                }
-                confirmBox.appendChild(span);
-                setTimeout(() => span.remove(), 3500);
-              } catch (err) {
-                confirmBox.innerHTML = '';
-                const span = document.createElement('span');
-                span.className = 'badge bg-danger';
-                span.textContent = 'Erro de rede';
-                confirmBox.appendChild(span);
-                setTimeout(() => span.remove(), 3500);
+            try {
+              const res = await fetch('/gerente/servicos/solicitacoes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ solicitacaoId: id, status })
+              });
+
+              // tenta ler resposta de forma segura
+              const contentType = res.headers.get('content-type') || '';
+              let json = null;
+              if (contentType.includes('application/json')) {
+                json = await res.json();
+              } else {
+                // se não for JSON, tentar texto (por segurança)
+                const text = await res.text();
+                // opcional: console para debug
+                console.log('Resposta não-JSON do servidor:', text);
               }
+
+              confirmBox.innerHTML = '';
+              const span = document.createElement('span');
+
+              if (res.ok && json && json.ok) {
+                span.className = 'badge bg-success';
+                span.textContent = json.message || 'Status alterado';
+                // atualiza célula do status na tabela
+                const statusCell = row.querySelector('td:nth-child(9)'); // coluna de Status (ajuste se necessário)
+                if (statusCell) statusCell.innerHTML = `<span class="badge bg-success">${status}</span>`;
+              } else if (res.ok && !json) {
+                // caso de redirect ou resposta em HTML mas com OK
+                span.className = 'badge bg-success';
+                span.textContent = 'Operação concluída';
+              } else {
+                span.className = 'badge bg-danger';
+                span.textContent = (json && json.message) ? json.message : 'Erro';
+              }
+
+              confirmBox.appendChild(span);
+              setTimeout(() => span.remove(), 3500);
+            } catch (err) {
+              console.error('Erro fetch:', err);
+              confirmBox.innerHTML = '';
+              const span = document.createElement('span');
+              span.className = 'badge bg-danger';
+              span.textContent = 'Erro de rede';
+              confirmBox.appendChild(span);
+              setTimeout(() => span.remove(), 3500);
             }
+          }
+
 
             aprovar.addEventListener('click', () => send('APROVADO'));
             recusar.addEventListener('click', () => send('REJEITADO'));

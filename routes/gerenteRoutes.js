@@ -141,6 +141,10 @@ router.delete('/gerentes/deletar/:id', gerenteController.deletarGerente);
 router.get('/gerentes/editar/:id', gerenteController.getEditarGerente);
 router.patch('/gerentes/:id', gerenteController.atualizarGerente);
 
+//Rota Fechamento Geral
+router.get('/fechamento-geral', gerenteController.fechamentoGeral);
+
+
 
 // Logout
 router.get('/logout', (req, res) => {

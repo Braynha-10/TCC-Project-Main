@@ -29,6 +29,7 @@
                         <td><%= gerente.salario %></td>
                         <td><a href="/gerente/gerentes/editar/<%=gerente.id%>">Editar</a></td>
                         <td><button onclick="openModal(<%= gerente.id %>)">Deletar</button></td>
+                    </tr>
                 <% }); %>
             </tbody>
         </table>

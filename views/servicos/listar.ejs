@@ -34,13 +34,84 @@
                     <td><%= servico.Catalogo.nome%></td>
                     <td><%= servico.descricao %></td>
                     <td><%= servico.status %></td>
-                    <td>
-                        <a href="/gerente/servico/pdf/<%= servico.id %>" target="_blank" class="btn btn-danger">Gerar PDF</a>
+                    <td class="d-flex flex-column gap-1">
+
+                        <a href="/gerente/servico/pdf/<%= servico.id %>?tipo=completo" 
+                        target="_blank" 
+                        class="btn btn-danger btn-sm">PDF Completo</a>
+<br>
+                        <a href="/gerente/servico/pdf/<%= servico.id %>?tipo=financeiro" 
+                        target="_blank" 
+                        class="btn btn-primary btn-sm">PDF Financeiro</a>
+<br>
+                        <a href="/gerente/servico/pdf/<%= servico.id %>?tipo=mecanico" 
+                        target="_blank" 
+                        class="btn btn-secondary btn-sm">PDF Mecânico</a>
+<br>
+                        <a href="/gerente/servico/pdf/<%= servico.id %>?tipo=cliente" 
+                        target="_blank" 
+                        class="btn btn-info btn-sm">PDF Cliente</a>
+<br>
+                        <a href="/gerente/servico/pdf/<%= servico.id %>?tipo=veiculo" 
+                        target="_blank" 
+                        class="btn btn-success btn-sm">PDF Veículo</a>
+
                     </td>
+
                 </tr>
             <!-- <% }); %> -->
         </tbody>
     </table>
+    <br><br>
+    <!-- ============================
+        BLOCOS DE BOTÕES DO RELATÓRIO GERAL
+    ============================= -->
+    <div class="container mt-4">
+
+        <div class="card shadow p-4">
+            <h3 class="text-center mb-3">Relatórios Gerais</h3>
+
+            <div class="row g-3 justify-content-center">
+
+                <!-- Relatório Completo -->
+                <div class="col-md-6">
+                    <a href="/gerente/fechamento-geral?tipo=completo" class="btn btn-primary btn-lg">
+                        📄 Relatório 
+                        Completo
+                    </a>
+                </div>
+                <!-- Por Mecânico -->
+                <div class="col-md-6">
+                    <a href="/gerente/fechamento-geral?tipo=por-mecanico" class="btn btn-warning btn-lg" style="margin: 5px;" >
+                        👨‍🔧 Agrupado por Mecânico
+                    </a>
+                </div>
+                <!-- Relatório Simples -->
+                <div class="col-md-4">
+                    <a href="/gerente/fechamento-geral?tipo=simples" class="btn btn-secondary btn-lg" style="margin: 5px;">
+                        📑 Relatório 
+                        Simples
+                    </a>
+                </div>
+                <!-- Financeiro -->
+                <div class="col-md-4">
+                    <a href="/gerente/fechamento-geral?tipo=financeiro" class="ml-4 btn btn-success btn-lg" style="margin: 5px;">
+                        💰 Financeiro
+                    </a>
+                </div>
+                
+                <!-- Resumo Geral -->
+                <div class="col-md-4">
+                    <a href="/gerente/fechamento-geral?tipo=resumo-geral" class="btn btn-dark btn-lg" style="margin: 5px;">
+                        📊 Resumo 
+                        Geral
+                    </a>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
     <br><br>
     <div class="d-flex justify-content-center">
         <a href="/gerente/painelGerente" class="btn btn-danger">Voltar</a>
