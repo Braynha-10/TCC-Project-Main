@@ -2,6 +2,7 @@ const { Mecanico, Peca, Servico, Veiculo, Pagamento, Catalogo, Gerente, Cliente,
 const { get } = require('../routes/gerenteRoutes');
 const { Op, Sequelize } = require("sequelize");
 const PDFDocument = require('pdfkit');
+const { listarSolitacoesPecas } = require('./mecanicoController');
 
 
 
@@ -857,6 +858,44 @@ const processarSolicitacaoServicos = async (req, res) => {
 };
 
 
+exports.listarSolitacoesPecas = async (req, res) => {
+    try {
+        let { page = 1, search = "" } = req.query;
+        page = Number(page);
+        const limit = 10;
+        const offset = (page - 1) * limit;
+
+        // Filtro de busca
+        const where = {};
+        if (search.trim() !== "") {
+            where.nome = { [Op.like]: `%${search}%` };
+        }
+
+        // Consulta com paginação
+        const { rows: pecas, count } = await Solicitacoes_peca.findAndCountAll({
+            where,
+            limit,
+            offset,
+            include: [{ model: Mecanico }]
+        });
+
+        const totalPages = Math.ceil(count / limit);
+
+        res.render("peca/listaPeca", {
+            pecas,
+            gerente: req.session.gerente || false,
+            mecanico: req.session.mecanico || false,
+            currentPage: page,
+            totalPages,
+            search
+        });
+
+    } catch (error) {
+        console.error("Erro ao listar as solicitações de peças:", error);
+        res.status(500).send("Erro ao listar as solicitações de peças");
+    }
+}
+
 exports.alterarSolicitacaoPeca = async (req, res) => {
   try {
     console.log('POST /gerente/pecas/solicitacoes body:', req.body);
@@ -902,4 +941,5 @@ module.exports = {
     processarSolicitacaoServicos,
     ordemServico,
     fechamentoGeral,
+    listarSolitacoesPecas,
 };

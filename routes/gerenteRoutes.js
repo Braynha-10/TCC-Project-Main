@@ -90,20 +90,22 @@ router.get('/pecas/cadastro', async (req, res) => {
     res.render('pecas/cadastro', {peca});
 });
 
-router.get('/pecas/solicitacoes', async (req, res) => { 
-    try {
-        const pecas = await Solicitacoes_peca.findAll({
-            include: [
-                { model: Mecanico },
-            ]
-        });
-        const gerente = true
-        res.render('peca/listaPeca', { pecas, gerente });
-    } catch (error) {
-        console.error('Erro ao listar as solicitações de peças: ', error);
-        res.status(500).send('Erro ao listar as solicitações de peças');
-    }
-});
+// router.get('/pecas/solicitacoes', async (req, res) => { 
+//     try {
+//         const pecas = await Solicitacoes_peca.findAll({
+//             include: [
+//                 { model: Mecanico },
+//             ]
+//         });
+//         const gerente = true
+//         res.render('peca/listaPeca', { pecas, gerente, search });
+//     } catch (error) {
+//         console.error('Erro ao listar as solicitações de peças: ', error);
+//         res.status(500).send('Erro ao listar as solicitações de peças');
+//     }
+// });
+
+router.get('/pecas/solicitacoes', gerenteController.listarSolitacoesPecas);
 
 router.post('/pecas/solicitacoes', gerenteController.processarSolicitacaoPeca);
 
