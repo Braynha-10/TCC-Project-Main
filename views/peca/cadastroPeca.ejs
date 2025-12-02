@@ -47,7 +47,7 @@
                                 <th>Nome</th>
                                 <th>Preço</th>
                                 <th>Estoque</th>
-                                <th>Qtd solic.</th>
+                                <th>Qtd solic.d</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -149,9 +149,14 @@
 
   submitExistente.addEventListener('click', async () => {
     const form = formExistente;
+
     const radio = form.querySelector('input[name="pecaId"]:checked');
     if (!radio) { showToast('Selecione uma peça.', false); return; }
+
     const pecaId = radio.value;
+
+    const row = radio.closest('tr');
+
     const quantidadeInput = form.querySelector('input[name="quantidade"]');
     const quantidade = parseInt(quantidadeInput.value, 10) || 1;
 

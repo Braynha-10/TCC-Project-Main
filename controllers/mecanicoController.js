@@ -426,6 +426,7 @@ exports.listarSolitacoesPecas = async (req, res) => {
 
 exports.solicitarPeca = async(req, res) => {
     const { nome, descricao, preco, quantidade } = req.body;
+    console.log(quantidade);
     const mecanico = req.session.mecanico; // Assume que o usuário está autenticado
     try {
         await Solicitacoes_peca.create({

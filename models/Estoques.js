@@ -25,8 +25,9 @@ module.exports = (sequelize, DataTypes) => {
   };
 
   Estoque.prototype.aumentarQuantidade = async function(qtd = 1) {
-    if (this.quantidade >= this.capacidade) {
-      throw new Error('Capacidade maxima ja atingida!');
+    if ((this.quantidade + qtd) >= this.capacidade) {
+      this.abastecerEstoque();
+      throw new Error('Capacidade maxima seria ultrapassada! Atualizado para completar a capacidade maxima.');
     }
     // Atualiza a quantidade no estoque
     this.quantidade += qtd;
