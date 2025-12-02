@@ -1,0 +1,49 @@
+body {
+    background-color: #838383be; /* Fundo  */
+}
+.container {
+    margin-top: 50px;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+h1 {
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+label {
+    font-weight: bold;
+    margin-top: 10px;
+}
+.home{
+  margin: 5px;
+  padding: 5px;
+}
+.botao {
+    display: inline-block; /* Permite ajustar padding e dimensões */
+    color: #000000; /* Cor do texto */
+    padding: 10px 20px; /* Espaçamento interno do botão */
+    font-size: 16px; /* Tamanho da fonte */
+    color: #000000; /* Cor do texto */
+    background-color: #677288; /* Cor do fundo (azul) */
+    text-decoration: none; /* Remove o sublinhado do link */
+    border: none; /* Remove borda padrão */
+    border-radius: 5px; /* Bordas arredondadas */
+    box-shadow: 0px 4px 6px rgba(221, 162, 162, 0.1); /* Adiciona sombra */
+    transition: background-color 0.3s, box-shadow 0.3s; /* Transição suave */
+  }
+  
+  .botao:hover {
+    background-color: #b1b8af; /* Fundo mais escuro ao passar o mouse */
+    color: #000000; /* Cor do texto */
+    box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2); /* Aumenta a sombra */
+    text-decoration: none; /* Remove sublinhado */
+  }
+  
+  .botao:active {
+    background-color: #f1f1f1; /* Fundo ainda mais escuro ao clicar */
+    color: #000000; /* Cor do texto */
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); /* Sombra reduzida */
+    text-decoration: none; /* Remove sublinhado */
+  }

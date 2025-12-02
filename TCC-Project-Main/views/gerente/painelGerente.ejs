@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Gerente</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <!-- CSS Específico -->
+    <link rel="stylesheet" href="/public/painel.css">
+</head>
+<style>
+    .secao {
+    display: none; /* Todas as seções começam escondidas */
+    text-align: center; /* Centraliza o texto horizontalmente */
+    }
+</style>
+<body>
+    <div class="d-flex justify-content-center align-items-center vh-100">
+        <div class="container text-center">
+            <div class="d-flex justify-content-end">
+                <button class="btn btn-danger" onclick="openModal()">Sair/Logout</button>
+            </div>
+            <h1>Painel do Gerente</h1>
+            <h3>Bem vindo Gerente: <%= gerente.nome %></h3>
+            <br>
+            <div class="container">
+                <div class="row">
+                    <!-- Botões para alternar entre as seções -->
+                    <div class="col-6 d-flex justify-content-center mb-3">
+                        <button class="botao btn-lg w-75" onclick="mostrarSecao('mecanicos')">Mecânicos</button>
+                    </div>
+                    <div class="col-6 d-flex justify-content-center mb-3">
+                        <button class="botao btn-lg w-75" onclick="mostrarSecao('pecas')">Peças</button>
+                    </div>
+                    <div class="col-6 d-flex justify-content-center mb-3">
+                        <button class="botao btn-lg w-75" onclick="mostrarSecao('servicos')">Serviços</button>
+                    </div>
+                    <div class="col-6 d-flex justify-content-center mb-3">
+                        <button class="botao btn-lg w-75" onclick="mostrarSecao('solicitacoes')">Solicitações</button>
+                    </div>
+                </div>
+            
+                <!-- Seção Mecânicos -->
+                <div id="mecanicos" class="secao text-center">
+                    <h2>Seção Mecânicos</h2>
+                    <p>Cadastro de mecânicos <a class="botao" href="/gerente/mecanico/cadastro">Clique aqui</a></p>
+                    <p>Listar mecânicos para folha salarial <a class="botao" href="/gerente/mecanico/listar">Clique aqui</a></p>
+                </div>
+            
+                <!-- Seção Peças -->
+                <div id="pecas" class="secao text-center" style="display: none;">
+                    <h2>Seção Peças</h2>
+                    <p>Cadastro de peças <a class="botao" href="/gerente/pecas/cadastro">Clique aqui</a></p>
+                    <p>Listar peças <a class="botao" href="/gerente/pecas/listar">Clique aqui</a></p>
+                </div>
+            
+                <!-- Seção Serviços -->
+                <div id="servicos" class="secao text-center" style="display: none;">
+                    <h2>Seção Serviços</h2>
+                    <p>Listagem dos serviços para balanceamento de lucro e custo <a class="botao" href="/gerente/servicos/listar">Clique aqui</a></p>
+                </div>
+            
+                <!-- Seção Solicitações -->
+                <div id="solicitacoes" class="secao text-center" style="display: none;">
+                    <h2>Seção Solicitações</h2>
+                    <p>Listagem de solicitações de peças <a class="botao" href="/gerente/pecas/solicitacoes">Clique aqui</a></p>
+                    <p>Listar solicitações de serviço <a class="botao" href="/gerente/servicos/solicitacoes">Clique aqui</a></p>
+                </div>
+            </div>
+                <!-- <div class="col-12 mb-2">
+                    <p>Listar serviços <a class="botao" href="/gerente/servicos/listarServicos">Clique aqui</a></p>
+                </div> -->
+            </div>
+        </div>
+    </div>  
+</body>
+
+<!-- Modal Logout-->
+<div id="exitModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); justify-content: center; align-items: center;">
+    <div style="background: #fff; padding: 20px; border-radius: 8px; width: 300px; text-align: center;">
+        <h3>Confirmar Logout</h3>
+        <p>Tem certeza que deseja Sair?</p>
+        <form id="form" action="/gerente/logout" method="POST" style="margin-top: 20px;">
+            <button type="submit" style="margin-right: 10px;">Sim</button>
+            <button type="button" onclick="closeModal()">Cancelar</button>
+        </form>
+    </div>
+</div>
+
+</html>
+
+<!-- Link para o JavaScript do Bootstrap -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const openModal = () => {
+        const exitModal = document.getElementById('exitModal');
+        exitModal.style.display = 'flex';
+    };
+
+    const closeModal = () => {
+        const exitModal = document.getElementById('exitModal');
+        exitModal.style.display = 'none';
+    };
+
+    function mostrarSecao(secaoId) {
+        // Esconde todas as seções
+        const secoes = document.querySelectorAll('.secao');
+        secoes.forEach(secao => secao.style.display = 'none');
+
+        // Mostra apenas a seção selecionada
+        const secaoSelecionada = document.getElementById(secaoId);
+        if (secaoSelecionada) {
+            secaoSelecionada.style.display = 'block';
+        }
+    }
+
+</script>
