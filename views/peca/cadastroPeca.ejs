@@ -59,7 +59,7 @@
                                     <td><%= peca.id %></td>
                                     <td><%= peca.nome %></td>
                                     <td>R$ <%= (peca.preco || 0).toFixed(2) %></td>
-                                    <td><%= peca.quantidade || 0 %></td>
+                                    <td><%= peca?.Estoque?.quantidade || 0 %></td>
                                     <td>
                                       <input class="form-control quantidade-input" type="number" name="quantidade" min="1" value="1" style="width:100px"/>
                                     </td>

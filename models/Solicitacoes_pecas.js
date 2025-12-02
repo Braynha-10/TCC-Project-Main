@@ -3,6 +3,7 @@ module.exports = (sequelize, DataTypes) => {
         nome: DataTypes.STRING,
         descricao: DataTypes.STRING,
         preco: DataTypes.DOUBLE,
+        quantidade: DataTypes.INTEGER,
         status: {
             type: DataTypes.ENUM('pendente', 'aprovado', 'recusado'),
             defaultValue: 'pendente'

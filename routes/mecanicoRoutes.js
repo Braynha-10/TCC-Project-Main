@@ -11,8 +11,9 @@ router.post('/pecas/solicitar', mecanicoController.postSolicitarPeca);
 
 const bcrypt = require('bcrypt');
 const {authMiddleware} = require('../middlewares/authMiddleware');
-const { Veiculo, Cliente, Pagamento, Servico, Peca, Mecanico, Catalogo, Solicitacoes_servico, Solicitacoes_peca} = require('../models'); // Importação dos modelos de dados
+const { Veiculo, Cliente, Pagamento, Servico, Peca, Mecanico, Catalogo, Solicitacoes_servico, Solicitacoes_peca, Estoque} = require('../models'); // Importação dos modelos de dados
 const { homeVeiculo,listandoVeiculos, listarServicosEmAndamento, finalizarServicosEmAndamento,cadastroVeiculo, atualizandoVeiculo, deletaVeiculo, cadastroCliente, atualizandoCliente, deletaCliente, editarVeiculo, listarClientesMecanico, listarServicos, listandoSolicitacoesServicos, solicitarServico, listarSolitacoesPecas, solicitarPeca, editarCliente } = require('../controllers/mecanicoController');
+
 
 // router.get('/', authMiddleware, (req, res) => {
 //     if (req.user.userType !== 'mecanico') {
@@ -158,7 +159,11 @@ router.post("/servico", async (req, res) => {
 // PECAS----------------------------------------------------------------------------------------------------------------------------------------
 // Solicitar pecas
 router.get('/peca', async (req, res) => { 
-    const pecas = await Peca.findAll();
+    const pecas = await Peca.findAll({
+        include: [
+            {model: Estoque}
+        ]
+    });
     res.render('peca/cadastroPeca', {pecas});
 });
 

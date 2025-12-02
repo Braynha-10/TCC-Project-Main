@@ -623,15 +623,15 @@ const processarSolicitacaoPeca = async (req, res) => {
                 if(!pecaEstoque){
                     await Estoque.create({
                         produtoId: peca.id,
-                        capacidade: 5,
-                        quantidade: 0,
+                        capacidade: solicitacao.quantidade,
+                        quantidade: solicitacao.quantidade,
                     }, { transaction });
                 } else {
                     if(pecaEstoque.quantidade >= pecaEstoque.capacidade) {
                         await transaction.rollback();
                         return res.status(400).send('Capacidade maxima preenchida!');
                     }
-                    await pecaEstoque.abastecerEstoque();
+                    await pecaEstoque.aumentarQuantidade(solicitacao.quantidade);
                 }
             } else {
                 const novaPeca = await Peca.create({
@@ -642,8 +642,8 @@ const processarSolicitacaoPeca = async (req, res) => {
 
                 await Estoque.create({
                     produtoId: novaPeca.id,
-                    capacidade: 5,
-                    quantidade: 5,
+                    capacidade: solicitacao.quantidade,
+                    quantidade: solicitacao.quantidade,
                 }, { transaction });
             }
 
@@ -902,9 +902,9 @@ exports.alterarSolicitacaoPeca = async (req, res) => {
     const { solicitacaoId, status } = req.body;
     if (!solicitacaoId) return res.status(400).send('solicitacaoId ausente');
 
-    // Exemplo usando Sequelize (ajuste ao seu modelo)
-    const { Peca } = require('../models'); // ajuste path/model
-    const peca = await Peca.findByPk(solicitacaoId);
+    // Exemplo usando Sequelize
+    const { Solicitacoes_peca } = require('../models');
+    const peca = await Solicitacoes_peca.findByPk(solicitacaoId);
     if (!peca) return res.status(404).send('Solicitação não encontrada');
 
     const novoStatus = (status || '').toUpperCase();
@@ -919,6 +919,7 @@ exports.alterarSolicitacaoPeca = async (req, res) => {
     return res.status(500).send('Erro interno');
   }
 };
+
 
 module.exports = {
     listarMecanicos, 

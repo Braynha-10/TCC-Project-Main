@@ -425,7 +425,7 @@ exports.listarSolitacoesPecas = async (req, res) => {
 
 
 exports.solicitarPeca = async(req, res) => {
-    const { nome, descricao, preco } = req.body;
+    const { nome, descricao, preco, quantidade } = req.body;
     const mecanico = req.session.mecanico; // Assume que o usuário está autenticado
     try {
         await Solicitacoes_peca.create({
@@ -433,6 +433,7 @@ exports.solicitarPeca = async(req, res) => {
             nome,
             descricao,
             preco,
+            quantidade,
             status: 'PENDENTE' // Sempre começa como pendente
         });
         res.render('mecanico/painelMecanico', {mecanico}); // Redireciona para a listagem

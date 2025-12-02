@@ -29,6 +29,7 @@
             <th>Nome da Peça</th>
             <th>Descrição</th>
             <th>Preço</th>
+            <th>Quantidade</th>
             <th>Status</th>
             <% if (gerente) { %><th class="text-center">Ações</th><% } %>
           </tr>
@@ -47,6 +48,7 @@
                     -
                   <% } %>
                 </td>
+                <td><%= peca.quantidade %></td>
                 <td>
                   <% if (peca.status === 'APROVADO' || peca.status === 'Aprovado') { %>
                     <span class="badge bg-success">APROVADO</span>
